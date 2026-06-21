@@ -2,9 +2,10 @@
 
 > Music for thinking & building — an audio-reactive particle field in the TapVid brand language.
 
-A single self-contained web page: play calm public-domain piano/cello, and a flowing
-noise particle field (Tappy Green → Signal Purple) moves to the music — its swirl speed,
-color and ripple are driven by the audio's **frequency spectrum and waveform**.
+A single self-contained web page: play calm public-domain piano/cello, and a dense
+WebGL2 flow field (Tappy Green → Signal Purple) moves to the music — a grid of points
+domain-warped by fractal 4D simplex noise, with its displacement, swirl speed, color and
+ripple driven by the audio's **frequency spectrum and waveform**.
 
 **Live:** https://bobobobo-creator.github.io/tapvid-fm/
 
@@ -17,9 +18,11 @@ color and ripple are driven by the audio's **frequency spectrum and waveform**.
 
 ## How it works
 
-- Plain HTML + Canvas2D + the Web Audio API. No build step, no dependencies (just web fonts).
-- `<audio>` → Web Audio analyser; the particle flow field reads `getByteFrequencyData`
-  (spectrum) and `getByteTimeDomainData` (waveform) each frame.
+- Plain HTML + WebGL2 + the Web Audio API. No build step, no dependencies (just web fonts).
+- A grid of ~70k–270k points (density preset dependent) is displaced in a vertex shader by
+  fractal 4D simplex noise; feedback trails fade each frame.
+- `<audio>` → Web Audio analyser; the spectrum (`getByteFrequencyData`) and waveform
+  (`getByteTimeDomainData`) are uploaded as textures and sampled per column in the shader.
 - Over `http(s)` the field reacts to the real audio. Opened as a local `file://` the
   browser silences the Web Audio graph (null-origin media), so the page plays the audio
   directly and animates from a synthetic envelope instead. **Hosting it (this Pages link)
@@ -43,6 +46,17 @@ the `<script>` in `index.html`.
 The Bach cello recording is shared unmodified, for non-commercial use, with attribution
 to the performer, per CC BY-NC-ND 3.0.
 
+## Visual credits
+
+The flow-field technique is ported from **"Not Safe" by ZRNOF**
+([openprocessing.org/sketch/2956548](https://openprocessing.org/sketch/2956548)), a recode in
+the #RecodeRethink curation, inspired by [Etienne Jacob](https://bleuje.com/). The GLSL noise
+is reused under its MIT licenses (headers kept in the shader source):
+
+- 4D simplex noise — Ian McEwan / Ashima Arts / [stegu](https://github.com/stegu/webgl-noise) (MIT)
+- `snoise4DImage` + `displace` — © 2023 Zaron (MIT)
+
 ## Code license
 
-MIT — see `LICENSE`. (Applies to the code only; audio keeps the licenses above.)
+MIT — see `LICENSE`. (Applies to the new code only; the GLSL noise keeps its MIT headers,
+and the audio keeps the licenses above.)
