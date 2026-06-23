@@ -6,7 +6,7 @@
 <title>TapVid FM — music for thinking & building</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --green:#8FD71B; --ink:#0A0A0A; --paper:#FFFFFF; --purple:#5B4FFF; --g500:#737373;
@@ -18,23 +18,24 @@
   body{font-family:var(--mono);color:var(--paper)}
   #scene{position:fixed;inset:0;display:block;width:100%;height:100%}
   .vignette{position:fixed;inset:0;z-index:2;pointer-events:none;
-    background:radial-gradient(130% 130% at 50% 50%,transparent 46%,rgba(0,0,0,.72) 100%)}
+    background:radial-gradient(130% 100% at 50% 38%,transparent 55%,rgba(0,0,0,.55) 100%)}
   .nowplaying{position:fixed;top:26px;right:30px;z-index:5;display:flex;align-items:center;gap:12px;
     font-family:var(--mono);font-size:13px;letter-spacing:.02em;color:var(--paper);opacity:.95;user-select:none}
   .eq{display:flex;align-items:flex-end;gap:2px;height:15px;width:18px}
   .eq i{flex:1;background:var(--purple);height:20%;border-radius:1px;transition:height .08s linear}
   .nowplaying .note{color:var(--purple)} .nowplaying b{font-weight:500;color:var(--paper)} .nowplaying .status{color:var(--g500)}
-  .wordmark{position:fixed;left:32px;bottom:28px;z-index:5;user-select:none;line-height:1.35}
+  .nowplaying .np-text{display:inline-block;max-width:min(52vw,560px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle}
+  .wordmark{position:fixed;left:32px;top:26px;z-index:5;user-select:none;line-height:1.35}
   .wordmark .mk{font-family:var(--sans);font-weight:800;font-size:20px;letter-spacing:-.01em;color:var(--paper)}
   .wordmark .mk .fm{color:var(--green)}
   .wordmark .sub{font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--g500);text-transform:uppercase;margin-top:3px}
-  .hint{position:fixed;left:50%;bottom:98px;transform:translateX(-50%);z-index:6;font-family:var(--mono);
+  .hint{position:fixed;left:50%;top:46%;transform:translate(-50%,-50%);z-index:6;font-family:var(--mono);
     font-size:12px;letter-spacing:.06em;color:var(--g500);text-align:center;transition:opacity .5s ease;user-select:none}
   .hint .k{border:1px solid #34332f;border-radius:4px;padding:1px 6px;color:var(--paper);font-size:11px}
   .hint.playing{opacity:0}
   .pulse{animation:pulse 2.6s ease-in-out infinite}
   @keyframes pulse{0%,100%{opacity:.4}50%{opacity:.85}}
-  .bar{position:fixed;left:50%;bottom:30px;transform:translateX(-50%);z-index:7;display:flex;align-items:center;gap:12px;
+  .bar{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:7;display:flex;align-items:center;gap:12px;
     padding:9px 16px;background:rgba(18,18,20,.74);border:1px solid #26262a;border-radius:999px;backdrop-filter:blur(8px);
     font-family:var(--mono);user-select:none}
   .bar button{background:none;border:none;color:var(--paper);cursor:pointer;font-size:15px;line-height:1;padding:6px 7px;border-radius:8px;opacity:.82;transition:opacity .15s,background .15s}
@@ -45,7 +46,7 @@
   .bar input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:11px;height:11px;border-radius:50%;background:var(--green);cursor:pointer}
   .bar input[type=range]::-moz-range-thumb{width:11px;height:11px;border:none;border-radius:50%;background:var(--green);cursor:pointer}
   .bar .sep{width:1px;height:18px;background:#2f2f33}
-  .toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);z-index:7;font-family:var(--mono);font-size:11px;
+  .toast{position:fixed;left:50%;bottom:74px;transform:translateX(-50%);z-index:7;font-family:var(--mono);font-size:11px;
     letter-spacing:.16em;text-transform:uppercase;color:var(--green);opacity:0;transition:opacity .3s ease;pointer-events:none}
   .toast.show{opacity:.9}
 </style>
@@ -56,13 +57,13 @@
 
   <div class="nowplaying">
     <span class="eq" id="eq"><i></i><i></i><i></i><i></i></span>
-    <span><span class="note">&#9834;</span> <b>TapVid&nbsp;FM</b> &nbsp;<span class="status" id="status">— press play</span></span>
+    <span class="np-text"><span class="note">&#9834;</span> <b>TapVid&nbsp;FM</b> &nbsp;<span class="status" id="status">— press play</span></span>
   </div>
   <div class="wordmark">
     <div class="mk">TapVid<span class="fm">&nbsp;FM</span></div>
     <div class="sub">music for thinking &amp; building</div>
   </div>
-  <div class="hint pulse" id="hint">click anywhere &middot; or press <span class="k">space</span> &mdash; the sound moves the field</div>
+  <div class="hint pulse" id="hint">click anywhere &middot; or press <span class="k">space</span> &mdash; the music types the code</div>
 
   <div class="bar" id="bar">
     <button id="prev" aria-label="previous track">&#9198;</button>
@@ -76,181 +77,107 @@
   <div class="toast" id="toast"></div>
 
 <script>
+var GREEN='#8FD71B', INK='#0A0A0A';
+
 /* ===========================================================================
-   TapVid FM — audio-reactive flow field (WebGL2)
-   Technique ported from "Not Safe" by ZRNOF (openprocessing.org/sketch/2956548),
-   a recode in the #RecodeRethink curation, inspired by Etienne Jacob (bleuje.com).
-   GLSL noise: 4D simplex by Ian McEwan / Ashima Arts / stegu (MIT);
-   snoise4DImage + displace by Zaron (MIT) — license headers kept in the shader.
-   The field is driven by the audio's frequency spectrum + waveform.
+   Scene: code rain falling onto a keyboard, reacting to the music.
+   - keys glow per frequency-spectrum column (the music "plays" the keyboard)
+   - code glyphs rain down (rate = loudness, bursts on the beat) and on landing
+     flash the key beneath + throw a little spark.
    =========================================================================== */
-var canvas=document.getElementById('scene');
-var gl=canvas.getContext('webgl2',{preserveDrawingBuffer:true, alpha:false, antialias:false, premultipliedAlpha:false});
+var cv=document.getElementById('scene'), ctx=cv.getContext('2d');
+var rain=document.createElement('canvas'), rctx=rain.getContext('2d');
+var DPR=Math.min(2, window.devicePixelRatio||1);
+var CH="01{}()[];=<>/+*-_.#$&|:?".split('');
+var glyphs=[], splashes=[], beatFlash=0, bassSmooth=0, lastBeat=0;
+var KB={keys:[],keyTop:0,x:0,w:0,keyW:0}, glyphFont='16px monospace', keyFont='12px monospace';
 
-/* ---------- GLSL ---------- */
-var SNOISE4D=`
-// 4D simplex noise — Ian McEwan, Ashima Arts, stegu. Distributed under the MIT License.
-// https://github.com/ashima/webgl-noise  https://github.com/stegu/webgl-noise
-vec4 mod289(vec4 x){return x-floor(x*(1.0/289.0))*289.0;}
-float mod289(float x){return x-floor(x*(1.0/289.0))*289.0;}
-vec4 permute(vec4 x){return mod289(((x*34.0)+10.0)*x);}
-float permute(float x){return mod289(((x*34.0)+10.0)*x);}
-vec4 taylorInvSqrt(vec4 r){return 1.79284291400159-0.85373472095314*r;}
-float taylorInvSqrt(float r){return 1.79284291400159-0.85373472095314*r;}
-vec4 grad4(float j, vec4 ip){
-  const vec4 ones=vec4(1.0,1.0,1.0,-1.0); vec4 p,s;
-  p.xyz=floor(fract(vec3(j)*ip.xyz)*7.0)*ip.z-1.0;
-  p.w=1.5-dot(abs(p.xyz),ones.xyz);
-  s=vec4(lessThan(p,vec4(0.0)));
-  p.xyz=p.xyz+(s.xyz*2.0-1.0)*s.www;
-  return p;
-}
-#define F4 0.309016994374947451
-float snoise(vec4 v){
-  const vec4 C=vec4(0.138196601125011,0.276393202250021,0.414589803375032,-0.447213595499958);
-  vec4 i=floor(v+dot(v,vec4(F4)));
-  vec4 x0=v-i+dot(i,C.xxxx);
-  vec4 i0; vec3 isX=step(x0.yzw,x0.xxx); vec3 isYZ=step(x0.zww,x0.yyz);
-  i0.x=isX.x+isX.y+isX.z; i0.yzw=1.0-isX;
-  i0.y+=isYZ.x+isYZ.y; i0.zw+=1.0-isYZ.xy; i0.z+=isYZ.z; i0.w+=1.0-isYZ.z;
-  vec4 i3=clamp(i0,0.0,1.0); vec4 i2=clamp(i0-1.0,0.0,1.0); vec4 i1=clamp(i0-2.0,0.0,1.0);
-  vec4 x1=x0-i1+C.xxxx; vec4 x2=x0-i2+C.yyyy; vec4 x3=x0-i3+C.zzzz; vec4 x4=x0+C.wwww;
-  i=mod289(i);
-  float j0=permute(permute(permute(permute(i.w)+i.z)+i.y)+i.x);
-  vec4 j1=permute(permute(permute(permute(i.w+vec4(i1.w,i2.w,i3.w,1.0))+i.z+vec4(i1.z,i2.z,i3.z,1.0))+i.y+vec4(i1.y,i2.y,i3.y,1.0))+i.x+vec4(i1.x,i2.x,i3.x,1.0));
-  vec4 ip=vec4(1.0/294.0,1.0/49.0,1.0/7.0,0.0);
-  vec4 p0=grad4(j0,ip); vec4 p1=grad4(j1.x,ip); vec4 p2=grad4(j1.y,ip); vec4 p3=grad4(j1.z,ip); vec4 p4=grad4(j1.w,ip);
-  vec4 norm=taylorInvSqrt(vec4(dot(p0,p0),dot(p1,p1),dot(p2,p2),dot(p3,p3)));
-  p0*=norm.x; p1*=norm.y; p2*=norm.z; p3*=norm.w; p4*=taylorInvSqrt(dot(p4,p4));
-  vec3 m0=max(0.6-vec3(dot(x0,x0),dot(x1,x1),dot(x2,x2)),0.0);
-  vec2 m1=max(0.6-vec2(dot(x3,x3),dot(x4,x4)),0.0);
-  m0=m0*m0; m1=m1*m1;
-  return 49.0*(dot(m0*m0,vec3(dot(p0,x0),dot(p1,x1),dot(p2,x2)))+dot(m1*m1,vec2(dot(p3,x3),dot(p4,x4))));
-}`;
-var SNOISE_IMG=`
-// MIT License — Copyright (c) 2023 Zaron
-vec4 snoise4DImage(vec2 uv, float scal, float gain, float ofst, vec4 move){
-  uv*=scal;
-  float R=snoise(vec4(uv,100.,200.)+move);
-  float G=snoise(vec4(uv,300.,400.)+move);
-  float B=snoise(vec4(uv,500.,600.)+move);
-  return vec4(ofst+gain*vec3(R,G,B),1.);
-}`;
-var DISPLACE=`
-// MIT License — Copyright (c) 2023 Zaron
-vec2 displace(vec2 uv, vec2 duv, float off, float wei){ duv-=off; return uv-duv*wei; }`;
+var presets=[{name:'flow',rate:1,fade:0.16},{name:'calm',rate:0.5,fade:0.10},{name:'storm',rate:1.9,fade:0.22}];
+var pi=0;
 
-var VERT=`#version 300 es
-in vec2 aPosition;
-uniform float uTime; uniform vec2 uRandom; uniform float uLevel; uniform float uBass; uniform float uAspect;
-uniform sampler2D uFreq; uniform sampler2D uWave;
-`+SNOISE4D+SNOISE_IMG+DISPLACE+`
-vec2 fbm(vec2 uv, float scal, float gain, float ofst, vec4 move){
-  vec4 n;
-  n  =    1.0*snoise4DImage((uv-vec2(421.,132.))*1.0, scal, gain, ofst, move);
-  n +=    0.5*snoise4DImage((uv-vec2(913.,687.))*2.0, scal, gain, ofst, move);
-  n +=   0.25*snoise4DImage((uv-vec2(834.,724.))*4.0, scal, gain, ofst, move);
-  n +=  0.125*snoise4DImage((uv-vec2(125.,209.))*8.0, scal, gain, ofst, move);
-  n /= 1.875;
-  return n.rg;
-}
-out float vBright; out float vFreqX;
-void main(){
-  vec2 pos=aPosition;
-  vec2 ap=vec2(pos.x*uAspect, pos.y);                 // aspect-correct so the field stays round
-  float xN=pos.x*0.5+0.5;
-  float fAmp=texture(uFreq, vec2(xN,0.5)).r;          // spectrum at this column
-  float wv=texture(uWave, vec2(xN,0.5)).r*2.0-1.0;    // waveform at this column
-  float circle=smoothstep(1.0, 0.0, length(ap));
-  vec4 move=vec4(vec2(0.0), vec2(cos(uTime*0.5), sin(uTime*0.5))+uRandom);
-  vec2 n=fbm(ap, 2.0, 5.0, 0.5, move)*circle;
-  float wei=0.2*circle*(1.0 + uLevel*1.7 + fAmp*1.3); // displacement strength tracks loudness/frequency
-  vec2 dpos=displace(pos, n, 0.5, wei);
-  dpos+=vec2(-n.y, n.x)*wv*0.07*uLevel;               // waveform ripple, perpendicular to the flow
-  vBright=clamp(length(n)*(0.55+uLevel*1.3)+fAmp*0.55, 0.0, 1.5);
-  vFreqX=fAmp;
-  gl_Position=vec4(dpos, 0.0, 1.0);
-  gl_PointSize=1.0+uLevel*1.6;
-}`;
-var FRAG=`#version 300 es
-precision mediump float;
-in float vBright; in float vFreqX;
-uniform vec3 uGreen; uniform vec3 uPurple;
-out vec4 fragColor;
-void main(){
-  vec3 col=mix(uGreen, uPurple, clamp(vFreqX*1.25,0.0,1.0));
-  float a=clamp(vBright,0.0,1.0)*0.5;
-  fragColor=vec4(col*a, a);
-}`;
-var FADE_V=`#version 300 es
-const vec2 P[3]=vec2[3](vec2(-1.,-1.),vec2(3.,-1.),vec2(-1.,3.));
-void main(){ gl_Position=vec4(P[gl_VertexID],0.,1.); }`;
-var FADE_F=`#version 300 es
-precision mediump float; uniform float uFade; out vec4 c;
-void main(){ c=vec4(0.,0.,0.,uFade); }`;
+function roundRect(c,x,y,w,h,r){ c.beginPath();
+  c.moveTo(x+r,y); c.arcTo(x+w,y,x+w,y+h,r); c.arcTo(x+w,y+h,x,y+h,r); c.arcTo(x,y+h,x,y,r); c.arcTo(x,y,x+w,y,r); c.closePath(); }
+function mix(a,b,t){ return [Math.round(a[0]+(b[0]-a[0])*t),Math.round(a[1]+(b[1]-a[1])*t),Math.round(a[2]+(b[2]-a[2])*t)]; }
 
-/* ---------- GL helpers ---------- */
-function sh(type,src){ var s=gl.createShader(type); gl.shaderSource(s,src); gl.compileShader(s);
-  if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; }
-function prog(v,f){ var p=gl.createProgram(); gl.attachShader(p,sh(gl.VERTEX_SHADER,v)); gl.attachShader(p,sh(gl.FRAGMENT_SHADER,f));
-  gl.linkProgram(p); if(!gl.getProgramParameter(p,gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p)); return p; }
-
-var pPoints, pFade, vao, posBuf, freqTex, waveTex, count=0, uLoc={};
-function makeTex(){ var t=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D,t);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE); return t; }
-function upTex(t,data){ gl.bindTexture(gl.TEXTURE_2D,t); gl.pixelStorei(gl.UNPACK_ALIGNMENT,1);
-  gl.texImage2D(gl.TEXTURE_2D,0,gl.R8,data.length,1,0,gl.RED,gl.UNSIGNED_BYTE,data); }
-
-function glInit(){
-  pPoints=prog(VERT,FRAG); pFade=prog(FADE_V,FADE_F);
-  vao=gl.createVertexArray(); gl.bindVertexArray(vao);
-  posBuf=gl.createBuffer();
-  var loc=gl.getAttribLocation(pPoints,'aPosition');
-  gl.bindBuffer(gl.ARRAY_BUFFER,posBuf); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
-  ['uTime','uRandom','uLevel','uBass','uAspect','uFreq','uWave','uGreen','uPurple'].forEach(function(n){ uLoc[n]=gl.getUniformLocation(pPoints,n); });
-  uLoc.uFade=gl.getUniformLocation(pFade,'uFade');
-  freqTex=makeTex(); waveTex=makeTex();
-  gl.disable(gl.DEPTH_TEST); gl.enable(gl.BLEND);
-}
-var uRandom=[Math.random()*300, Math.random()*300];
-
-var presets=[{name:'flow',sp:3.0,fade:1,speed:1},{name:'calm',sp:4.2,fade:0.6,speed:0.72},{name:'storm',sp:2.2,fade:1.7,speed:1.4}];
-var pi=0, DPR=Math.min(2, window.devicePixelRatio||1), aspect=1, fieldTime=0;
-function buildGrid(){
-  var W=canvas.width=Math.floor(innerWidth*DPR), H=canvas.height=Math.floor(innerHeight*DPR);
-  canvas.style.width=innerWidth+'px'; canvas.style.height=innerHeight+'px';
-  gl.viewport(0,0,W,H); aspect=W/H;
-  var sp=presets[pi].sp*DPR;
-  var cols=Math.max(2,Math.floor(W/sp)), rows=Math.max(2,Math.floor(H/sp));
-  while(cols*rows>360000){ sp*=1.12; cols=Math.max(2,Math.floor(W/sp)); rows=Math.max(2,Math.floor(H/sp)); }
-  var pos=new Float32Array(cols*rows*2), k=0;
-  for(var x=0;x<cols;x++) for(var y=0;y<rows;y++){ pos[k++]=(x/(cols-1))*2-1; pos[k++]=(y/(rows-1))*2-1; }
-  count=cols*rows;
-  gl.bindVertexArray(vao); gl.bindBuffer(gl.ARRAY_BUFFER,posBuf); gl.bufferData(gl.ARRAY_BUFFER,pos,gl.STATIC_DRAW);
+function build(){
+  var W=cv.width=rain.width=Math.floor(innerWidth*DPR), H=cv.height=rain.height=Math.floor(innerHeight*DPR);
+  cv.style.width=rain.style.width=innerWidth+'px'; cv.style.height=rain.style.height=innerHeight+'px';
+  rctx.fillStyle=INK; rctx.fillRect(0,0,W,H);
+  /* faint piano keys (no computer keyboard) */
+  var kbW=Math.min(W*0.94, 1800*DPR), startX=(W-kbW)/2;
+  var whiteCount=Math.max(14, Math.round(kbW/(42*DPR))), whiteW=kbW/whiteCount;
+  var whiteH=Math.min(H*0.18, 168*DPR), topY=H - whiteH - H*0.04;
+  KB.white=[]; KB.black=[];
+  for(var i=0;i<whiteCount;i++){ var x=startX+i*whiteW; KB.white.push({x:x,w:whiteW,cx:x+whiteW/2,lit:0}); }
+  var blackW=whiteW*0.6, blackH=whiteH*0.6, pat={0:1,1:1,3:1,4:1,5:1};   /* C# D# F# G# A# */
+  for(var j=0;j<whiteCount-1;j++){ if(pat[j%7]){ var bx=startX+(j+1)*whiteW-blackW/2; KB.black.push({x:bx,w:blackW,h:blackH,cx:bx+blackW/2,lit:0}); } }
+  KB.keyTop=topY; KB.x=startX; KB.w=kbW; KB.whiteW=whiteW; KB.whiteH=whiteH;
+  glyphFont=Math.round(whiteW*0.72)+'px "JetBrains Mono",monospace';
 }
 
-function render(A){
-  gl.bindVertexArray(vao);
-  /* fade previous frame -> trails (longer when louder) */
-  gl.useProgram(pFade); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-  gl.uniform1f(uLoc.uFade, Math.max(0.04,(0.12-A.level*0.06)*presets[pi].fade));
-  gl.drawArrays(gl.TRIANGLES,0,3);
-  /* draw the displaced point field, additively */
-  gl.useProgram(pPoints); gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
-  fieldTime += (0.006 + A.level*0.03)*presets[pi].speed;
-  gl.uniform1f(uLoc.uTime, fieldTime);
-  gl.uniform2f(uLoc.uRandom, uRandom[0], uRandom[1]);
-  gl.uniform1f(uLoc.uLevel, A.level);
-  gl.uniform1f(uLoc.uBass, A.bass||A.level);
-  gl.uniform1f(uLoc.uAspect, aspect>=1?aspect:1.0);
-  gl.uniform3f(uLoc.uGreen, 0.561,0.843,0.106);
-  gl.uniform3f(uLoc.uPurple, 0.357,0.310,1.0);
-  gl.activeTexture(gl.TEXTURE0); upTex(freqTex, A.freq); gl.uniform1i(uLoc.uFreq,0);
-  gl.activeTexture(gl.TEXTURE1); upTex(waveTex, A.wave); gl.uniform1i(uLoc.uWave,1);
-  gl.drawArrays(gl.POINTS,0,count);
+function spawn(boost){
+  glyphs.push({x:KB.x+Math.random()*KB.w, y:-20*DPR-Math.random()*240*DPR,
+    vy:(0.7+Math.random()*0.9+(boost||0))*DPR, ch:CH[(Math.random()*CH.length)|0],
+    hot:Math.random()<0.22, hue:Math.random()<0.15?'p':'g'});
+}
+function land(g){
+  var best=null;
+  for(var b=0;b<KB.black.length;b++){ var bk=KB.black[b]; if(g.x>=bk.x&&g.x<=bk.x+bk.w){ best=bk; break; } }
+  if(!best){ var idx=Math.floor((g.x-KB.x)/KB.whiteW); if(idx<0)idx=0; if(idx>=KB.white.length)idx=KB.white.length-1; best=KB.white[idx]; }
+  if(best) best.lit=Math.min(1.7,best.lit+0.95);
+  for(var s=0;s<5;s++) splashes.push({x:g.x,y:KB.keyTop,vx:(Math.random()*2-1)*2.4*DPR,
+    vy:-(1.4+Math.random()*2.6)*DPR,life:1,hue:g.hue});
+}
+
+function step(A){
+  var W=cv.width,H=cv.height,lvl=A.level,bass=A.bass||lvl,freq=A.freq,fb=freq.length;
+  bassSmooth+=(bass-bassSmooth)*0.12;
+  var now=performance.now(), beat=false;
+  if(bass-bassSmooth>0.09 && now-lastBeat>165){ beat=true; lastBeat=now; beatFlash=1; }
+  var base=(0.3+lvl*3.4)*presets[pi].rate;
+  var n=(base|0)+(Math.random()<(base-(base|0))?1:0);
+  for(var s=0;s<n;s++) spawn(lvl*0.8);
+  if(beat){ var burst=((8+bass*44)*presets[pi].rate)|0; for(var s2=0;s2<burst;s2++) spawn(0.8+Math.random()*1.4); }
+
+  /* rain layer: fade + draw falling glyphs (trails) */
+  rctx.fillStyle='rgba(10,10,11,'+presets[pi].fade+')'; rctx.fillRect(0,0,W,H);
+  rctx.font=glyphFont; rctx.textAlign='center'; rctx.textBaseline='middle';
+  for(var i=glyphs.length-1;i>=0;i--){ var g=glyphs[i]; g.y+=g.vy*(0.5+lvl*0.65);
+    rctx.fillStyle = g.hot ? 'rgba(240,255,228,0.95)' : (g.hue==='p'?'rgba(124,114,255,0.82)':'rgba(143,215,27,0.78)');
+    rctx.fillText(g.ch,g.x,g.y);
+    if(g.y>=KB.keyTop){ land(g); glyphs.splice(i,1); } else if(g.y>H+40){ glyphs.splice(i,1); } }
+  if(glyphs.length>1700) glyphs.splice(0,glyphs.length-1700);
+
+  /* composite */
+  ctx.fillStyle=INK; ctx.fillRect(0,0,W,H);
+  ctx.drawImage(rain,0,0);
+
+  /* faint piano keys — barely visible, glowing to the spectrum + landing impacts */
+  var topY=KB.keyTop, wh=KB.whiteH;
+  ctx.fillStyle='rgba(220,225,230,0.10)'; ctx.fillRect(KB.x, topY, KB.w, 1.5*DPR);   /* landing surface */
+  for(var wk=0;wk<KB.white.length;wk++){ var w0=KB.white[wk];
+    var wbin=Math.floor((w0.cx/W)*fb*0.55), wspec=freq[wbin]/255, wglow=Math.max(wspec*0.6,w0.lit); w0.lit*=0.9;
+    if(wglow>0.02){ var wc=mix([143,215,27],[120,110,255], Math.min(1,w0.cx/W*1.1));
+      ctx.globalAlpha=Math.min(0.5,wglow*0.45); ctx.fillStyle='rgb('+wc[0]+','+wc[1]+','+wc[2]+')';
+      ctx.fillRect(w0.x, topY, w0.w-DPR, wh); ctx.globalAlpha=1; }
+    ctx.fillStyle='rgba(225,230,235,0.07)'; ctx.fillRect(w0.x, topY, DPR, wh);       /* faint separator */
+  }
+  for(var bk2=0;bk2<KB.black.length;bk2++){ var b0=KB.black[bk2];
+    var bbin=Math.floor((b0.cx/W)*fb*0.55), bspec=freq[bbin]/255, bglow=Math.max(bspec*0.6,b0.lit); b0.lit*=0.9;
+    ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillRect(b0.x, topY, b0.w, b0.h);            /* dim black key */
+    if(bglow>0.02){ var bc=mix([143,215,27],[120,110,255], Math.min(1,b0.cx/W*1.1));
+      ctx.globalAlpha=Math.min(0.85,bglow*0.8); ctx.fillStyle='rgb('+bc[0]+','+bc[1]+','+bc[2]+')';
+      ctx.fillRect(b0.x, topY, b0.w, b0.h); ctx.globalAlpha=1; }
+    ctx.lineWidth=DPR; ctx.strokeStyle='rgba(255,255,255,'+(0.05+bglow*0.3)+')'; ctx.strokeRect(b0.x, topY, b0.w, b0.h);
+  }
+
+  /* sparks */
+  for(var j=splashes.length-1;j>=0;j--){ var sp=splashes[j]; sp.vy+=0.18*DPR; sp.x+=sp.vx; sp.y+=sp.vy; sp.life-=0.045;
+    if(sp.life<=0){ splashes.splice(j,1); continue; }
+    ctx.fillStyle=(sp.hue==='p'?'rgba(124,114,255,':'rgba(143,215,27,')+sp.life.toFixed(2)+')';
+    ctx.fillRect(sp.x,sp.y,2*DPR,2*DPR); }
+
+  if(beatFlash>0.02){ ctx.fillStyle='rgba(120,150,90,'+(beatFlash*0.05)+')'; ctx.fillRect(0,0,W,H); beatFlash*=0.86; }
 }
 
 /* ---------- procedural lofi engine (fallback) ---------- */
@@ -285,8 +212,8 @@ LofiFM.prototype.barFn=function(t){var ch=this.prog[this.bar%4],be=this.bl,bn=be
   for(var i=0;i<ch.c.length;i++){var f=this.m2f(ch.c[i]);
     this.voice(f,t,bn+0.6,{type:'triangle',gain:0.05,atk:0.9,rel:1.2,detune:-4});this.voice(f,t,bn+0.6,{type:'sine',gain:0.04,atk:1.1,rel:1.2,detune:5});}
   this.voice(this.m2f(ch.b),t,be*2-0.05,{gain:0.16,atk:0.04});this.voice(this.m2f(ch.b),t+be*2,be*2-0.05,{gain:0.13,atk:0.04});
-  for(var b=0;b<4;b++)if(Math.random()<0.42){var n=this.pent[(Math.random()*6)|0],tt=t+b*be+(Math.random()<0.3?be*0.5:0);
-    this.voice(this.m2f(n),tt,be*0.9,{type:'triangle',gain:0.07,rel:0.4,detune:3});this.voice(this.m2f(n)*2,tt,be*0.6,{gain:0.02});}
+  for(var b=0;b<4;b++)if(Math.random()<0.42){var nn=this.pent[(Math.random()*6)|0],tt=t+b*be+(Math.random()<0.3?be*0.5:0);
+    this.voice(this.m2f(nn),tt,be*0.9,{type:'triangle',gain:0.07,rel:0.4,detune:3});this.voice(this.m2f(nn)*2,tt,be*0.6,{gain:0.02});}
   this.bar++;};
 LofiFM.prototype.loop=function(){while(this.next<this.ac.currentTime+0.2){this.barFn(this.next);this.next+=this.bl*4;}};
 LofiFM.prototype.start=function(){this.init();if(this.ac.state==='suspended')this.ac.resume();this.playing=true;
@@ -351,7 +278,6 @@ var Player={
   prev:function(){ this.goto(-1); },
   setVol:function(v){ this.vol=v; if(this.gain) this.gain.gain.value=v; else if(this.audio) this.audio.volume=v; },
   fail:function(){ if(this.mode==='track' && !this.everPlayed){ this.mode='lofi'; if(this.playing) lofi.start(); updateNow(); } },
-  /* unified audio snapshot for the field: {level, bass, freq, wave} */
   snap:function(){
     var i,s,bs;
     if(this.mode==='lofi' && lofi.an){
@@ -403,8 +329,8 @@ addEventListener('keydown',function(e){
 
 var toast=document.getElementById('toast'), toastT=0;
 function cyclePreset(){
-  pi=(pi+1)%presets.length; buildGrid();
-  toast.textContent='field · '+presets[pi].name;
+  pi=(pi+1)%presets.length;
+  toast.textContent='rain · '+presets[pi].name;
   toast.className='toast show';
   clearTimeout(toastT); toastT=setTimeout(function(){ toast.className='toast'; }, 1300);
 }
@@ -413,17 +339,14 @@ updateNow();
 /* ---------- render loop ---------- */
 function frame(){
   var A=Player.snap();
-  render(A);
+  step(A);
   if(Player.playing){ eq.forEach(function(b,i){ b.style.height=(15+(A.freq[2+i*4]||0)/255*85)+'%'; }); }
   else eq.forEach(function(b,i){ b.style.height=(15+8*Math.abs(Math.sin(perfnow()*0.003+i)))+'%'; });
   requestAnimationFrame(frame);
 }
-
-if(!gl){
-  document.body.insertAdjacentHTML('beforeend','<div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;color:#737373;font-family:monospace;font-size:13px">WebGL2 not available in this browser.</div>');
-} else {
-  glInit(); buildGrid(); addEventListener('resize',buildGrid); requestAnimationFrame(frame);
-}
+addEventListener('resize',build);
+build();
+requestAnimationFrame(frame);
 </script>
 </body>
 </html>
